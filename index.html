@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邪惡宇宙生存倒數 v3</title>
+<style>
+  :root{
+    --night:#0c1a12; --night2:#122419; --panel:#16291e; --line:#2a4433;
+    --sky:#ff9040; --skydim:#c96f2e; --rose:#e0a890;
+    --text:#e9e4d8; --muted:#9db3a4; --divine:#f2d06b; --love:#e58ea0;
+    --red:#d95c5c; --black:#666;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--night);color:var(--text);
+    font-family:"Noto Serif TC",Georgia,"PingFang TC","Microsoft JhengHei",serif;
+    line-height:1.75;display:flex;justify-content:center}
+  #app{width:100%;max-width:520px;height:100vh;height:100dvh;
+    display:flex;flex-direction:column;padding:10px 12px}
+  .skybar{border:1px solid var(--line);border-radius:10px;overflow:hidden;flex:none;
+    background:linear-gradient(90deg,#ff9040 0%,#d97a3a 30%,#5a5a3a 55%,#1d3a28 80%,#0c1a12 100%);
+    position:relative;height:32px;margin-bottom:6px}
+  .skybar .marker{position:absolute;top:0;bottom:0;width:2px;background:#fff;
+    box-shadow:0 0 8px rgba(255,255,255,.8);transition:left .6s ease}
+  .skybar .tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.25)}
+  .skybar .label{position:absolute;left:9px;top:50%;transform:translateY(-50%);
+    font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .skybar .sub{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+    font-size:10px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .stats{display:flex;gap:5px;margin-bottom:6px;flex:none}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:3px 4px;text-align:center}
+  .stat .k{font-size:9px;color:var(--muted)}
+  .stat .v{font-size:14px;color:var(--rose);font-weight:700;line-height:1.2}
+  .stat.fav .v{color:var(--love)}
+  .body-sense{background:#14251b;border:1px solid var(--line);border-left:3px solid var(--rose);
+    border-radius:8px;padding:5px 10px;margin-bottom:6px;font-size:12px;color:var(--muted);
+    font-style:italic;flex:none}
+  .body-sense b{color:var(--rose);font-style:normal;font-size:10px;margin-right:6px}
+  #story{flex:1 1 auto;min-height:0;background:var(--night2);border:1px solid var(--line);
+    border-radius:12px;padding:14px 15px;margin-bottom:8px;overflow-y:auto;font-size:15px}
+  #story p{margin-bottom:12px;animation:fadein .45s ease}
+  #story .gm{border:1px solid var(--divine);border-radius:10px;padding:9px 12px;
+    color:var(--divine);font-size:13.5px;background:rgba(242,208,107,.06);margin-bottom:12px}
+  #story .gm::before{content:"⚖️ 第八大主神：";font-weight:700;display:block;font-size:11px;margin-bottom:2px}
+  #story .sys{color:var(--muted);font-size:12.5px}
+  #story .ev{color:var(--sky);font-size:12px;letter-spacing:.18em}
+  #story .zone-r{color:var(--red)}
+  #story .zone-b{color:#999}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  #choices{flex:none;display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow-y:auto;padding-bottom:6px}
+  .choice{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:9px 12px;color:var(--text);font-family:inherit;font-size:13.5px;text-align:left;
+    cursor:pointer;transition:border-color .15s;line-height:1.45}
+  .choice:hover,.choice:focus-visible{border-color:var(--sky);outline:none}
+  .choice:active{transform:scale(.985)}
+  .choice .hint{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .choice.ceremony{border-color:var(--skydim);background:linear-gradient(135deg,#2a1e12,#16291e)}
+  .choice.goal{border-left:3px solid var(--rose)}
+  .ending{border:1px solid var(--sky);border-radius:14px;padding:16px;
+    background:linear-gradient(160deg,#20140a,#0c1a12);animation:fadein .8s ease}
+  .ending h2{color:var(--sky);font-size:19px;margin-bottom:10px}
+  .ending p{margin-bottom:10px;font-size:14px}
+  .ending .tag{font-size:11px;color:var(--muted);letter-spacing:.2em;margin-bottom:6px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="skybar">
+    <div class="tick" style="left:25%"></div><div class="tick" style="left:50%"></div><div class="tick" style="left:75%"></div>
+    <div class="marker" id="marker" style="left:0%"></div>
+    <div class="label" id="monthLabel">序章</div>
+    <div class="sub" id="ceremonyLabel">醫院</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">體驗券</div><div class="v" id="sMoney">200</div></div>
+    <div class="stat"><div class="k">科研</div><div class="v" id="sSci">0</div></div>
+    <div class="stat"><div class="k">情報</div><div class="v" id="sIntel">0</div></div>
+    <div class="stat"><div class="k">側錄</div><div class="v" id="sPrep">0</div></div>
+    <div class="stat fav"><div class="k">好感</div><div class="v" id="sFav">0</div></div>
+  </div>
+  <div class="body-sense"><b>身體感覺</b><span id="senseText"></span></div>
+  <div id="story"></div>
+  <div id="choices"></div>
+</div>
+
+<script>
+const S = {
+  month:0, label:100, money:200, sci:0, intel:0, prep:0, fav:0, allies:0,
+  hasPatch:false, hasCoords:false, knowLabel:false, sealed:false,
+  prayed:0, over:false, goal:null, goalHits:0, eventsLeft:0,
+  redzone:0, blackzone:false, askedLeave:false, favWarned:false, rumor:false, seen:[], schedKnown:false, tempted:false, betrayed:false, promise:false,
+};
+const CEREMONIES=[3,6,9,12];
+const $=id=>document.getElementById(id);
+const story=$("story"), choices=$("choices");
+
+function write(html,cls){const p=document.createElement("p");if(cls)p.className=cls;
+  p.innerHTML=html;story.appendChild(p);story.scrollTop=story.scrollHeight}
+function gm(t){const d=document.createElement("p");d.className="gm";d.innerHTML=t;
+  story.appendChild(d);story.scrollTop=story.scrollHeight}
+function clearC(){choices.innerHTML=""}
+function addC(label,hint,fn,cls){const b=document.createElement("button");
+  b.className="choice"+(cls?" "+cls:"");
+  b.innerHTML=label+(hint?`<span class="hint">${hint}</span>`:"");
+  b.onclick=()=>{clearC();fn()};choices.appendChild(b)}
+
+function senseText(){
+  const L=S.label;
+  if(L>80)return "偶爾還會頭暈想吐。好想念地球的花生醬。";
+  if(L>60)return "眩暈幾乎沒再發作。合成蒜泥白肉……其實沒那麼難吃。";
+  if(L>45)return "橘色天空看起來順眼多了。夢裡的天空也是橘色的。";
+  if(L>30)return "花生拌飯吃起來完全舒坦。有點想不起地球的天空多藍。";
+  return "身體前所未有地舒適。這裡好像也不錯？（這個念頭哪裡不對）";
+}
+function refresh(){
+  $("sMoney").textContent=S.money;$("sSci").textContent=S.sci;
+  $("sIntel").textContent=S.intel+(S.allies?"🤝"+S.allies:"");
+  $("sPrep").textContent=S.prep+(S.hasCoords?"✅":"");
+  $("sFav").textContent=S.fav+(S.fav>=6?"💘":S.fav>=4?"💗":"");
+  $("senseText").textContent=senseText();
+  $("monthLabel").textContent=S.month===0?"序章":`第 ${Math.min(S.month,12)} 月`;
+  const n=CEREMONIES.find(c=>c>=S.month);
+  $("ceremonyLabel").textContent=S.month===0?"醫院":(n?(S.schedKnown?`下次儀式：第 ${n} 月`:"儀式時程：未知"):"末班車已過");
+  $("marker").style.left=(Math.max(0,S.month-1)/12*100)+"%";
+}
+
+/* ═══════════ 序章：醫院 ═══════════ */
+function prologue1(){
+  refresh();
+  write("<span class='ev'>◈ 序章 · 醫療艙</span>");
+  write("意識浮上來。消毒水的味道、規律的儀器聲、手腕上冰涼的識別環。你還沒睜眼，就聽到腳步聲和交談聲靠近。");
+  clearC();
+  addC("😴 繼續裝昏迷，偷聽","情報+1：閉眼的人聽得最多",()=>{
+    S.intel++;
+    write("你維持著昏迷的呼吸頻率。護理師的聲音：「1362號體徵穩定了……監護人那邊已經收到通知，過幾天會派人來。」腳步聲遠去。你在黑暗裡記下了兩個關鍵詞：<b>1362號、監護人</b>。");
+    prologue2();
+  });
+  addC("👁️ 直接睜眼按呼叫鈴","光明正大地醒來",()=>{
+    write("你睜眼按鈴。護理師快步進來，露出職業化的微笑：「醒了？我去通知醫師。」");
+    prologue2();
+  });
+  addC("🕵️ 對天花板展開內心諜報獨白","「這裡……是敵營。我必須保持冷靜……」",()=>{
+    S.label-=2;
+    write("你花了十分鐘在腦內建立「敵情分析框架」，把點滴架判定為監控裝置、把天花板投影判定為洗腦設備。然後護理師進來換了點滴，跟你說了聲早安。");
+    gm("開場三分鐘，測謊儀已對石頭開機。本座欣賞這份傳承，但不多。");
+    prologue2();
+  });
+}
+function prologue2(){
+  refresh();
+  write("<span class='ev'>◈ 序章 · 護理師</span>");
+  write("護理師動作俐落地檢查儀器——年輕男性。你注意到,這層樓的醫護清一色是男的。他看起來不討厭回答問題——前提是你問得出口。");
+  clearC();
+  addC("🩺 問身體狀況","你到底昏迷了多久、為什麼",()=>{
+    write("「召喚眩暈症，常見，不是每個人都會發作。」他調出全息數據，「治療已經完成，這裡的醫療比你們原世界先進得多——再觀察一天就能出院。」");
+    write("<span class='sys'>（症狀治好了。至於造成症狀的「那個原因」，他沒提——儀器大概也照不出來。）</span>");
+    prologue3();
+  });
+  addC("📋 問監護人制度","那個一直被提起的詞",()=>{
+    S.intel++;
+    write("「每個召喚體都會配一位監護人，通常有一定社經地位。負責你的生活費和基本安全。」她補了一句：「見過再考慮也行，換人也不是不行。」情報+1：<b>鏈子不是焊死的。</b>");
+    prologue3();
+  });
+  addC("⚡ 問異能檢測","召喚體好像都有異能？",()=>{
+    S.sci++;
+    write("「出院後可以預約檢測。你的波形很特別——<b>異常穩定</b>，不是爆發型的。」他看了眼儀器，「像一條一直開著的頻道。」科研+1：這個描述,你隱約覺得重要。");
+    prologue3();
+  });
+}
+function prologue3(){
+  refresh();
+  write("<span class='ev'>◈ 序章 · 醫師查房</span>");
+  write("醫師來了，平板電腦上滑著你的數據，看起來趕時間但不敷衍。這可能是出院前最後一次正面提問的機會。");
+  clearC();
+  addC("🚪 直接問：「我可以回去嗎？」","那個最重要的問題",()=>{
+    S.intel++;S.askedLeave=true;
+    write("醫師的手指停了一下。「安全區內行動自由。至於回原世界——召喚是單向的，<b>官方沒有遣返程序</b>。」他說得平靜，像在念藥物副作用。");
+    write("門鎖確認上鎖。判斷牢籠不看待遇，看門鎖——現在你知道了。情報+1。");
+    gm("開場就問對問題。比某位前任玩家快了兩百則,本座記入功德簿。");
+    prologueEnd();
+  });
+  addC("🕵️ 演諜報：旁敲側擊套醫師的話","「醫師,這裡的天空……一直是這個顏色嗎?」",()=>{
+    S.label-=2;
+    write("你用了三層話術、兩次意味深長的停頓。醫師：「嗯,大氣散射。還有問題嗎?我還有五十份病歷要寫。」你獲得了一段科普和零情報。");
+    gm("對FAQ機演諜戰,課金零回報。醫師沒有在騙你,他只是想下班。");
+    prologueEnd();
+  });
+  addC("🤒 裝虛弱,多住兩天","蒐集情報……或者純粹想躺",()=>{
+    S.label-=3;S.money+=10;
+    write("你咳了兩聲,成功多住兩天。這兩天你聽了很多八卦、吃了很多合成餐,情報收穫:零。但住院餐意外好吃。");
+    prologueEnd();
+  });
+}
+function prologueEnd(){
+  write("出院日。陳秘書代表監護人劉約書亞來接你——面無表情,遞給你一條玫瑰金手鍊:「通訊儀、電子身分證、副卡,都在裡面。」");
+  write("你穿回星塵外衣,背包裡的道具一件不少。窗外,橘色的天光鋪滿這座陌生的城。");
+  write("<span class='sys'>正篇開始:每月選一個大目標,日常會隨機發生5件事。相關事件≥2件,目標才算有進展——日常不一定聽你的。儀式季開(第3、6、9、12月)。身體感覺是唯一的濃度計,反著讀。</span>");
+  S.month=1;
+  setTimeout(monthStart,400);
+}
+
+/* ═══════════ 每月流程 ═══════════ */
+const GOALS=[
+  {id:"sci",  name:"🔬 科研攻堅",   hint:"專注推導空間理論"},
+  {id:"prep", name:"📡 側錄特訓",   hint:"訓練捕捉召喚陣訊號（需貼片）"},
+  {id:"intel",name:"🕵️ 情報蒐集",  hint:"摸清儀式、維安、制度的底"},
+  {id:"exp",  name:"🧭 安全區探索", hint:"公園、圖書館、政府機關"},
+  {id:"rest", name:"🛋️ 徹底米蟲",  hint:"這個月就是要耍廢"},
+  {id:"biz",  name:"🥜 經營花生帝國",hint:"賺體驗券,順便……擴張?"},
+];
+
+function monthStart(){
+  refresh();
+  if(S.over)return;
+  if(S.month>12)return endNoReturn();
+  S.label=Math.max(0,S.label-1); // 時間本身也在洗
+  S.seen=[]; // 每月事件不重複,跨月重置
+  write(`<span class="sys">── 第 ${S.month} 月 ──</span>`);
+  if(CEREMONIES.includes(S.month)){
+    S.schedKnown=true;
+    write("手鍊震動。城區公告:<b>召喚儀式將於本月舉行</b>,大廳臨時開放。");
+    clearC();
+    addC("🏛️ 前往召喚大廳","放棄本月日常,直奔儀式現場",ceremonyScene,"ceremony");
+    addC("📅 照常過日子","跳過這班儀式(下一班……還有嗎?)",()=>{
+      write("你決定跳過這班。遠方大廳的方向,天空亮了三分鐘。");
+      pickGoal();
+    });
+    return;
+  }
+  pickGoal();
+}
+function pickGoal(){
+  write("<span class='sys'>本月大目標?</span>");
+  clearC();
+  GOALS.forEach(g=>{
+    if(g.id==="prep"&&!S.hasPatch){
+      addC("🛒 採購感知擴展貼片(-80)","側錄的前置道具,本月目標=購物",()=>{
+        if(S.money<80){write("體驗券不夠!先賺錢吧。");return pickGoal()}
+        S.money-=80;S.hasPatch=true;S.label-=1;
+        write("你入手感知擴展貼片。店員機器人:「貼太陽穴,可暫時提高維度感知範圍。」側錄天線到手。");
+        S.goal={id:"rest",name:"購物"};S.goalHits=9;S.eventsLeft=2;runEvent();
+      },"goal");
+      return;
+    }
+    addC(g.name,g.hint,()=>{
+      S.goal=g;S.goalHits=0;S.eventsLeft=5;
+      write(`本月目標:<b>${g.name}</b>。`);
+      runEvent();
+    },"goal");
+  });
+}
+
+/* ═══════════ 事件池 ═══════════ */
+function intelLine(){
+  S.schedKnown=true;
+  const L=["召喚儀式每季舉行一次——第3、6、9、12月。你把日程刻進腦子裡。",
+   "儀式啟動約三分鐘,訊號廣播在啟動瞬間最完整——側錄要抓那一秒。",
+   "有位待了十個月的召喚體說:「我最近完全不會想家了,輕鬆多了。」他笑得很滿足。你莫名發冷。",
+   "曾有人在儀式上鬧事,之後「再也沒有人見過他」。官方紀錄:自願遷居外站。",
+   "你摸清了大廳電源總閘與備用照明線路的位置——如果有人肯替你動手的話。",
+   "行政長官的召喚預算逐季上升。這條產線,不打算停。",
+   "儀式當天維安加倍,全程紅色警戒——眾目睽睽,沒有空窗。"];
+  return "你打聽到:"+L[Math.min(S.intel-1,L.length-1)];
+}
+function hit(tag){if(S.goal&&S.goal.id===tag)S.goalHits++}
+function prepCheck(){
+  if((S.prep>=3||(S.prep>=2&&S.rumor))&&!S.knowLabel){S.knowLabel=true;
+    if(S.rumor)write("<span class='sys'>(你想起那篇被嘲笑的冷門帖。樓主沒有妄想。)</span>");
+    write("等等——你在自己身上偵測到一個<b>正在衰減的標記訊號</b>。入境越久的召喚體,訊號越弱。你懂了:<b>地球在認領你,而認領碼正在過期。</b>");
+    gm("恭喜發現暗設定。混吃等死的玩家永遠不會知道自己在倒數。知識的代價是焦慮,無知的代價是靈魂。");}
+}
+function favCheck(){
+  if(S.fav>=6&&!S.favWarned){S.favWarned=true;
+    gm("好感度亮紅燈。本座提醒:帥哥會嚴重拖累進度與回家意願,此為經文明載的物理定律。");}
+}
+
+const EVENTS=[
+/* ── 科研 ── */
+ {tag:"sci",title:"加速器數據異常",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("深夜,粒子加速器讀數跳出一段規律波形——很像儀式訊號的殘響。");
+   addC("熬夜排查,記錄全部參數","科研+1",()=>{S.sci++;hit("sci");
+     write("你追著波形熬到天亮。「空間摺疊」的推導又長了一節。");d()});
+   addC("先睡,明天再說","明天波形就消失了",()=>{S.label-=2;
+     write("你睡了個好覺。波形再也沒出現過。");d()});
+ }},
+ {tag:"sci",title:"論壇異能理論帖",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("論壇出現〈高維訊號的取樣極限〉,作者是匿名的前物理學家。");
+   addC("認真推導並私訊作者","科研+1",()=>{S.sci++;hit("sci");
+     write("你們用方程式聊了一整晚。對方最後留言:「時間有最小格,取樣要趁啟動瞬間。」");d()});
+   addC("按讚收藏(然後再也沒打開)","經典操作",()=>{
+     write("收藏夾+1。你的收藏夾已有47篇「之後再看」。");d()});
+ }},
+/* ── 側錄 ── */
+ {tag:"prep",title:"訊號塔開放日",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("城市通訊塔開放參觀。塔頂的背景雜訊濃得像湯。");
+   if(S.hasPatch){
+     addC("戴貼片實地採樣","側錄+1",()=>{S.prep++;hit("prep");
+       write("你在雜訊之海裡練習分離頻段。頭痛欲裂,但抓到了「那種感覺」。");prepCheck();d()});
+   }
+   addC("純觀光拍照","風景不錯",()=>{S.label-=2;
+     write("三十張橘色天際線。很美,跟回家沒有任何關係。");d()});
+ }},
+ {tag:"prep",title:"貼片進階校準",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("貼片說明書附錄:進階模式需配合冥想校準。");
+   if(S.hasPatch){
+     addC("做完整套校準","側錄+1",()=>{S.prep++;hit("prep");
+       write("校準完成的瞬間,你在雜訊深處聽到微弱而持續的呼叫——像有誰在念你的名字。");prepCheck();d()});
+   }
+   addC("說明書太長,改天","改天=永遠",()=>{S.label-=1;
+     write("說明書回到抽屜,與另外三份未拆的作伴。");d()});
+ }},
+/* ── 情報 ── */
+ {tag:"intel",title:"召喚體聚會",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("本月聚會主題:家鄉菜交流。你的花生點心永遠是硬通貨。");
+   addC("端著點心去套情報","情報+1",()=>{S.intel++;hit("intel");
+     write(intelLine());d()});
+   if(S.intel>=3){
+     addC("深談:試探誰跟你一樣想回家","盟友+1(需情報≥3)",()=>{S.allies++;hit("intel");
+       write("角落裡,幾個眼神清醒的召喚體與你交換聯絡方式。臨走前有人低聲說:「儀式那天,需要停電的話——找我。條件只有一個:找到回去的路時,別忘了我們。」");d()});
+   }
+   addC("純吃喝交朋友","快樂,零產出",()=>{S.label-=3;
+     write("七個世界的家鄉菜。今晚的你只屬於美食。");d()});
+ }},
+ {tag:"intel",title:"陳秘書例行訪視",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("陳秘書上門訪視,面無表情,FAQ模式待機。");
+   addC("追問制度邊角細節","情報+1(他不說謊,只看你會不會問)",()=>{S.intel++;hit("intel");
+     write(intelLine());d()});
+   addC("聊橘色天空的成因","他居然認真回答",()=>{
+     write("大氣粒子散射。你獲得一段科普,和零情報。");d()});
+ }},
+ {tag:"intel",title:"保鏢的話匣子",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("保鏢今天心情好,聊起他在大廳維安的日子。");
+   addC("順勢打聽儀式維安","情報+1",()=>{S.intel++;hit("intel");
+     write(intelLine());d()});
+   addC("聽他聊前女友","八卦也是聊天",()=>{S.label-=2;
+     write("三段感情,兩次被甩,一次異地。大量無用但精彩的八卦。");d()});
+ }},
+/* ── 監護人(好感) ── */
+ {tag:"intel",fav:true,title:"監護人邀你晚餐",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("劉約書亞難得回家。燭光、真食物、以及那張過分好看的臉。");
+   addC("赴約,邊吃邊套話","情報+2 好感+1(監護人知道的最多)",()=>{
+     S.intel+=2;S.fav++;S.label-=1;hit("intel");
+     write("他有問必答——儀式排程、行政長官的立場、維安佈防層級。權力核心的視野果然不同。");
+     write("<span class='sys'>(他倒水的時候,你走神了0.7秒。)</span>");favCheck();d()});
+   addC("赴約,然後被帥到忘記問","好感+2 情報+0",()=>{
+     S.fav+=2;S.label-=3;
+     write("你準備了八個問題。實際問出口的:「這個湯是什麼做的?」");
+     gm("八個問題,陣亡八個。美色是情報工作的頭號職災,記錄在案。");favCheck();d()});
+   addC("婉拒:「我在忙研究」","好感-1 志氣+∞",()=>{S.fav=Math.max(0,S.fav-1);
+     write("當晚你對著泡麵告訴自己:這叫專注。");d()});
+ }},
+ {tag:"intel",fav:true,title:"書房的燈還亮著",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("深夜,劉約書亞書房門虛掩,桌上文件隱約有「召喚」字樣。");
+   addC("敲門送宵夜,順便瞄文件","情報+1 好感+1",()=>{S.intel++;S.fav++;hit("intel");
+     write("他收下宵夜,沒有遮文件——下一季召喚預算表攤在那。你邊寒暄邊背下關鍵數字。");favCheck();d()});
+   addC("裝沒看見,回房","安全,但錯過了",()=>{
+     write("你回房了。那份文件再也沒出現過。");d()});
+ }},
+/* ── 探索 ── */
+ {tag:"exp",title:"公園長椅",run(d){
+   write("<span class='ev'>◈ 探索 · 公園</span>");
+   write("安全區中央公園。橘色天光下,人工湖倒映著雙月。散步的節奏讓腦子鬆開了。");
+   addC("散步整理思路","科研+1:卡了很久的推導突然通了",()=>{S.sci++;hit("exp");
+     write("走到第三圈,你突然想通了取樣公式的邊界條件。急忙用手鍊記下——公園是最便宜的實驗室。");d()});
+   addC("跟長椅上的早批召喚體聊天","情報+1:第一批的倖存者",()=>{S.intel++;hit("exp");
+     write("她是四年前第一批的,看起來跟你差不多年紀。「想回去?」她笑了,「不用工作、什麼都有,日子這麼舒服,九成九的人巴不得留下。」她頓了頓,壓低聲音:「會問這個問題的——是剩下的百分之一。」你注意到:公園裡的召喚體,清一色年輕女性。");d()});
+ }},
+ {tag:"exp",title:"中央圖書館",run(d){
+   write("<span class='ev'>◈ 探索 · 圖書館</span>");
+   write("圖書館對召喚體開放。制度檔案區和舊報紙區都不需要權限。");
+   addC("翻制度檔案","情報+1:召喚法規全文",()=>{S.intel++;hit("exp");
+     write("《召喚體安置法》全文都是福利:住房補貼、醫療全包、監護人責任、申訴管道、就業輔導。你翻了三遍,找不到一個字提「遣返」。");d()});
+   addC("查召喚相關的舊報導","情報+1:這段歷史比想像中短",()=>{S.intel++;hit("exp");
+     write("四年前的頭版:「跨維召喚技術重大突破!首批試驗7人召喚成功」——通篇歌功頌德,行政長官被寫成時代偉人,試驗場位於<span class='zone-r'>現紅色禁區</span>。四年,從7人到單次百人,批次幾乎全是年輕女性。全部報導裡,沒有一篇問過:她們願意嗎?");d()});
+ }},
+ {tag:"exp",title:"政府機關開放日",run(d){
+   write("<span class='ev'>◈ 探索 · 行政中心</span>");
+   write("行政中心開放日。公開紀錄申請窗口居然真的受理召喚體。");
+   addC("申請儀式相關公開紀錄","情報+1:官僚系統的誠實",()=>{S.intel++;hit("exp");
+     write("紀錄顯示:儀式耗能佔全城季度供電的11%,啟動當日全城其他區域<b>降載供電</b>。——儀式那天,整座城的電網都繃緊著。");d()});
+   addC("在大廳看行政長官的宣傳片","認識一下大反派",()=>{S.label-=2;
+     write("宣傳片裡,行政長官微笑著談「多元、包容、共榮」。你看完居然覺得他蠻有魅力。然後你打了個冷顫。");d()});
+ }},
+/* ── 米蟲/娛樂 ── */
+ {tag:"rest",title:"完美耍廢日",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("橘色天光正好,光球燈換了新色,花生拌飯冒著熱氣。");
+   addC("徹底躺平一整天","快樂值溢出",()=>{S.label-=3;S.money+=10;hit("rest");
+     write("毛色光亮的一天。日子舒服得不像被綁架。");d()});
+   addC("躺一半突然坐起來","總覺得忘了什麼",()=>{S.label-=1;
+     write("你盯著天花板想了十分鐘,沒想起來,又躺回去了。");d()});
+ }},
+ {tag:"rest",title:"虛擬遊樂場新館",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("全感官虛擬遊樂場開新館:可以體驗「任何世界的天空」。");
+   addC("點一個地球的藍天","標籤+3:偽鄉愁療法",()=>{S.label=Math.min(100,S.label+3);S.money-=15;hit("rest");
+     write("虛擬的藍天很像,又完全不像。你在假天空下站了很久,把真的那片又背了一遍。");d()});
+   addC("玩雲霄飛車到吐","純粹的快樂",()=>{S.label-=3;S.money-=15;hit("rest");
+     write("尖叫三小時。走出場館,橘色天空看起來格外親切——等等,親切?");d()});
+ }},
+ {tag:"rest",title:"掃貨日",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("商圈大促。上次買的粒子加速器旁邊,這次擺的是家用望遠鏡。");
+   addC("理性掃貨","體驗券-20,快樂+很多",()=>{S.money-=20;S.label-=2;hit("rest");
+     write("你買了三樣「絕對用得到」的東西。背包表示懷疑。");d()});
+   addC("只逛不買","窗口購物也是購物",()=>{
+     write("你摸遍了所有樣品,一毛沒花。店員機器人的眼神(如果有的話)充滿敬意。");d()});
+ }},
+/* ── 帝國 ── */
+ {tag:"biz",title:"新口味靈感",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("凌晨三點,你夢到花生與本地莓果的組合,醒來舌尖還有味道。");
+   addC("立刻研發投產","體驗券+40",()=>{S.money+=40;S.label-=3;hit("biz");
+     write("新口味上市即售罄。分店經理問要不要再展店。帝國的齒輪停不下來了。");d()});
+   addC("記在筆記本就好","克制的美德",()=>{
+     write("靈感存檔。筆記本裡躺著十二個未實現的口味。");d()});
+ }},
+ {tag:"biz",title:"加盟邀約",run(d){
+   write("<span class='ev'>◈ 日常</span>");
+   write("一位召喚體同鄉想加盟你的花生點心店,條件優渥。");
+   addC("談成加盟","體驗券+60,帝國+1",()=>{S.money+=60;S.label-=3;hit("biz");
+     write("第四家分店掛牌。你站在店門口,突然想起自己來這裡的第一個月在想什麼——想不太起來了。");d()});
+   addC("婉拒:「我可能……待不久」","說出口的瞬間自己愣住",()=>{S.label=Math.min(100,S.label+2);
+     write("「待不久」。這三個字說出口,像把什麼東西重新釘回了原位。");d()});
+ }},
+/* ── 網路/都市傳說/禁區 ── */
+ {tag:"any",title:"深夜刷帖",run(d){
+   write("<span class='ev'>◈ 日常 · 論壇</span>");
+   write("深夜,你抱著手鍊刷召喚體論壇。首頁三個熱帖在跳。");
+   addC("〈紅色禁區又傳出歌聲?〉","都市傳說版",()=>{S.label-=1;
+     if(S.redzone<3){S.redzone++;
+       const rz=["熱帖說:紅區深夜有「會唱歌的塔」,歌詞沒人聽得懂。樓下吵成兩派:超自然vs風切聲。你默默按了追蹤。",
+        "追蹤更新:有人貼出「歌聲」的頻譜圖——看起來像某種規律訊號!樓主宣稱要組隊夜探。你的手指懸在報名鍵上……然後想起自己還有正事。",
+        "夜探隊回報:塔是廢棄的舊召喚試驗塔,「歌聲」是塔頂破損外殼的風切共振。樓主人已平安,尊嚴陣亡。"][S.redzone-1];
+       write(rz);
+       if(S.redzone===3)gm("都市傳說偵破:風切聲。三個事件槽,換一個聲學科普。本座就說分心是有代價的。");
+     }else{write("紅區帖已完結。你重看了一遍夜探隊的翻車紀錄,還是很好笑。");}
+     d()});
+   addC("〈黑色禁區到底是什麼?〉","有人自稱知情人士",()=>{S.label-=1;
+     if(!S.blackzone){
+       addCafter(d);
+     }else{write("知情人士被банned了。版規新增一條:禁止販售禁區情報。");d()}
+   });
+   addC("〈記憶越來越模糊,不太想家了,正常嗎?〉","回覆數:3",()=>{S.rumor=true;S.label-=1;
+     write("樓主說,來了半年,家鄉親友的臉越來越模糊,連想念都懶得想了——「我是不是生病了?」留言清一色嘲笑他失智、太閒、想紅。只有你盯著螢幕發冷。<b>如果用自己的異能自我掃描,也許能找到原因。</b>");d()});
+   addC("〈本週最強花生食譜〉","美食版永遠熱鬧",()=>{S.label-=2;
+     write("你跟帖分享了獨門配方,收穫三百個讚和兩個加盟詢問。深夜的成就感,廉價又真實。");d()});
+ }},
+ {tag:"any",title:"神諭頻段",pray:true,run(d){
+   write("<span class='ev'>◈ 隨機</span>");
+   write("玫瑰金手鍊突然發燙,頻段裡浮出一個熟悉的、帶著笑意的訊號源。");
+   addC("🙏 向第八大主神祈禱","跨維度連線,鄉愁充值",()=>{
+     S.prayed++;S.label=Math.min(100,S.label+6);
+     const lines=["神諭降下:「核桃要吃,班車要記,帥哥要防。」你莫名想起花生醬的味道,比昨天更清晰。",
+      "神諭降下:「狗不叫,復之過——但你不是狗,你的錯要自己認領。」你笑出聲,同時眼眶有點熱。",
+      "神諭降下:「查封令的正確用法是判例,不是對空氣拍。」你摸了摸背包底部的兩張公文。",
+      "神諭只有一句:「地球這邊,呼叫沒停過。」你把這句話抄在筆記本第一頁。"];
+     gm(lines[Math.min(S.prayed-1,3)]);
+     write("<span class='sys'>(「想家」的感覺變得清晰。有什麼東西被充電了。)</span>");d()});
+   addC("當作手鍊故障","已讀不回神明",()=>{
+     write("你把手鍊摘下來甩了甩。訊號源安靜退出頻段。");
+     gm("已讀不回是吧。本座記仇的。");d()});
+ }},
+ {tag:"any",title:"鄉愁突襲",run(d){
+   write("<span class='ev'>◈ 隨機</span>");
+   write("超市貨架上出現一罐包裝神似地球花生醬的東西。你站在貨架前不動了。");
+   addC("買回家,配著地球的照片吃","標籤+4",()=>{S.label=Math.min(100,S.label+4);S.money-=10;
+     write("味道完全不對。但你邊吃邊把地球天空的藍色又背了一遍。");d()});
+   addC("用花生拌飯壓下去","本地美食療法",()=>{S.label-=4;
+     write("很有效。太有效了。有效到你隱約覺得不對勁。");d()});
+ }},
+];
+/* 黑區情報販子(從刷帖分支進入) */
+function addCafter(d){
+  write("私訊跳出。「知情人士」開價50體驗券,出售<span class='zone-b'>黑色禁區(軍事設施)</span>的「內部情報」。");
+  clearC();
+  addC("💸 買(-50)","軍事機密欸!",()=>{
+    S.money-=50;S.blackzone=true;S.label-=1;
+    write("你收到一份加密檔案:黑區是駐軍基地,有軌道防禦、能源武器庫、以及——「絕對跟召喚系統無關,兩個單位互相看不順眼」。");
+    gm("50體驗券,買到「跟你的主線毫無關係」的官方認證。軍事宅的浪漫,回家路上的路障。分心稅,收訖。");
+    d();
+  });
+  addC("不買,舉報詐騙","理智勝利",()=>{S.blackzone=true;
+    write("你順手舉報。三天後版規新增:禁止販售禁區情報。你為論壇治理做出了貢獻。");
+    d();
+  });
+}
+
+/* 事件抽取 */
+function drawEvent(){
+  const fresh=e=>!S.seen.includes(e.title);
+  if(Math.random()<0.12&&fresh(EVENTS.find(e=>e.pray))) return EVENTS.find(e=>e.pray);
+  const wantGoal=Math.random()<0.55;
+  let pool;
+  if(wantGoal&&S.goal){
+    pool=EVENTS.filter(e=>e.tag===S.goal.id&&!e.pray&&fresh(e));
+    if(S.goal.id==="prep") pool=pool.filter(e=>S.hasPatch);
+  }
+  if(!pool||!pool.length){
+    pool=EVENTS.filter(e=>!e.pray&&fresh(e));
+    if(!S.hasPatch) pool=pool.filter(e=>e.tag!=="prep");
+    if(S.fav>=4) pool=pool.concat(EVENTS.filter(e=>e.fav&&fresh(e)));
+    if(!pool.length) pool=EVENTS.filter(e=>!e.pray); // 池抽乾才允許重複
+  }
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function runEvent(){
+  if(S.eventsLeft<=0)return monthEnd();
+  S.eventsLeft--;
+  refresh();clearC();
+  const ev=drawEvent();
+  S.seen.push(ev.title);
+  ev.run(()=>{S.label=Math.max(0,S.label);setTimeout(runEvent,250)});
+}
+function monthEnd(){
+  refresh();
+  if(S.goal&&S.goal.id!=="rest"&&S.goalHits<9){
+    if(S.goalHits>=2){
+      const bonus=S.goal.id;
+      if(bonus==="sci")S.sci++;else if(bonus==="intel")S.intel++;
+      else if(bonus==="prep"&&S.hasPatch){S.prep++;prepCheck();}
+      else if(bonus==="exp")S.intel++;
+      write(`<span class="sys">月結:「${S.goal.name}」達標(相關事件 ${S.goalHits}/5)。專注加成+1。</span>`);
+    }else if(S.goalHits===1){
+      write(`<span class="sys">月結:「${S.goal.name}」略有推進(1/5),未達標(需≥2),無加成。</span>`);
+    }else{
+      write(`<span class="sys">月結:「${S.goal.name}」零進度(0/5)。</span>`);
+      gm(`你這個月立志「${S.goal.name}」,實際履歷:吃喝、發呆、看天空。目標與日常,平行線也沒你們平行。`);
+    }
+  }
+  S.month++;
+  setTimeout(monthStart,300);
+}
+
+/* ═══════════ 儀式現場 ═══════════ */
+function ceremonyScene(){
+  S.label-=2;refresh();
+  write("召喚大廳。巨大的召喚陣鋪滿整層地面,符文正在充能。維安比平常多一倍,全程紅色警戒——眾目睽睽,沒有空窗。三分鐘後,某個世界的30到100個人,會像你一樣被拖進這裡。");
+  const opts=()=>{
+    clearC();
+    if(S.hasPatch&&S.prep>=3&&!S.hasCoords){
+      addC("📡 側錄召喚陣訊號","貼片＋準備度:捕捉兩端各4組6維座標",()=>{
+        S.hasCoords=true;refresh();
+        write("啟動瞬間,48個數字如潮水灌進感知。3個空間維、1個時間格、第五維的光振動、還有一組說不出名字的座標——<b>地球端定位,側錄完成。</b>");
+        opts();
+      },"ceremony");
+    }else if(!S.hasCoords){
+      addC("📡 嘗試側錄(未準備)","沒有貼片或訓練不足",()=>{
+        write("訊號像瀑布砸下,你什麼都抓不住,只收穫一整天的偏頭痛。<b>側錄需要貼片＋側錄準備≥3。</b>");
+        opts();
+      },"ceremony");
+    }
+    if(S.hasCoords&&S.label>=35){
+      addC("🧥 穿上星塵漫遊者外衣——回家","座標✅ 標籤仍在✅",()=>{
+        ending2();
+      },"ceremony");
+      addC("⚖️🧥 拍下查封令,同時啟動外衣","一氣呵成:拍完即傳送,不留給維安一秒",()=>{
+        S.sealed=true;
+        write("你走向陣心。兩張公告拍下——「侵犯神聖自由遷徙權、命格代管、宇宙級抽卡詐欺,<b>數罪併罰,即日查封!</b>」符文熄滅、警報炸響、維安撲來——而外衣已經亮起。");
+        gm("拍完就跑,是為神速。判例即神蹟,撤退即藝術。");
+        ending2();
+      },"ceremony");
+    }else if(S.hasCoords&&S.label<35){
+      addC("🧥 穿上外衣——回家?","座標✅ 但身體毫無反應……",()=>{
+        write("你輸入座標,外衣亮起——又暗下去。<b>地球認不得你了。</b>標籤洗得太淡,母宇宙的拉力抓不住你。");
+        write("<span class='sys'>(回家的路關上了。但你的科研筆記還在。)</span>");opts();
+      },"ceremony");
+    }
+    if(S.allies>=2){
+      addC("⚖️ 發出暗號:盟友癱瘓電源","黑暗中的查封(盟友≥2)",()=>{
+        S.sealed=true;
+        write("你發出暗號。三秒後,大廳全黑——電源總閘被切,備用照明同時失靈。黑暗與驚叫之中,你摸到陣心,把兩張公告拍了下去。");
+        write("警報在黑暗裡炸響。維安封鎖出口只要一分鐘——留在人群裡等排查,等於自首。<b>必須馬上走。</b>");
+        gm("眾目睽睽拍不了封條,那就先關掉眾目。但黑暗只買得到一分鐘,接下來看你的了。");
+        clearC();
+        if(S.hasCoords&&S.label>=35){
+          addC("🧥 當場啟動外衣,獨自傳送","盟友還在黑暗裡等你的答覆……",()=>{
+            S.betrayed=true;
+            write("外衣亮起的瞬間,你聽見黑暗裡有人喊你的代號——是盟友。你沒有回頭。");
+            gm("燈是他們關的,路你一個人走。查封令管得了邪惡宇宙,管不了你的良心——那條,本座記帳。");
+            ending2();
+          },"ceremony");
+        }
+        addC("🏃 跟盟友從檢修通道撤離","守約:留下來,替所有人修一條路(科研線)",()=>{
+          S.promise=true;
+          write("你們從電源檢修通道撤出。安全屋裡,盟友看著你:「系統封了,舊路斷了。」你點頭:「那就修一條新的。給我時間——我把所有人都帶回去。」");
+          gm("查封是判例,承諾是契約。從今天起,你的科研不是為你一個人做的了。");
+          S.month++;setTimeout(monthStart,300);
+        },"ceremony");
+      },"ceremony");
+    }
+    addC("⚖️ 當眾拍下查封令","眾目睽睽。視死如歸。",()=>{ending3();},"ceremony");
+    addC("🚶 先撤,回去準備","窗口還有下一班……嗎?",()=>{
+      write("你混在人群裡離開。身後,新一批召喚體正在昏迷中被抬向醫院。你記住了他們的臉。");
+      S.month++;setTimeout(monthStart,300);
+    });
+  };
+  if(S.fav>=6&&!S.tempted){
+    S.tempted=true;
+    write("你剛在大廳站定,通訊儀亮了。劉約書亞:「今晚回來吃飯嗎?廚房燉了湯。」");
+    gm("本座警告過的場景來了。帥哥的湯,永遠在最要命的時刻端上桌。");
+    clearC();
+    addC("📵 「有事,晚點說。」關掉通訊","眼前是儀式,不是湯",()=>{
+      write("你關掉通訊,把心跳按回原位。陣心的符文正在充能——接下來的每一步,都不能分心。");
+      opts();
+    },"ceremony");
+    addC("🍲 回訊息回到一半,人已經往外走了","湯的引力,大於地球",()=>{
+      S.label-=6;
+      write("你錯過了整場儀式。湯真的很好喝。窗外深綠色的夜空,今天也很好看。");
+      gm("「下一班一定」——本座把這句話裱起來,掛在拖延神殿正中央。");
+      S.month++;setTimeout(monthStart,300);
+    });
+    return;
+  }
+  opts();
+}
+
+/* ═══════════ 結局 ═══════════ */
+function showEnding(tag,title,paras){
+  S.over=true;clearC();
+  const d=document.createElement("div");d.className="ending";
+  d.innerHTML=`<div class="tag">${tag}</div><h2>${title}</h2>`+
+    paras.map(p=>`<p>${p}</p>`).join("")+
+    `<button class="choice" onclick="location.reload()">↺ 再穿越一次</button>`;
+  story.appendChild(d);story.scrollTop=story.scrollHeight;
+}
+function ending2(){
+  const sealed=S.sealed
+    ?"在你消失前,召喚陣核心已貼著兩張金色公文。這個宇宙的抽卡系統,被一張午睡令和一張算命師罰單合法擊落。"
+    :"召喚陣還在你身後運轉。也許有一天,會有另一個帶著封條的人站在這裡。";
+  const paras=["外衣亮起。地球的拉力像退潮後的回浪,一把攫住你——順著梯度走,回家是下坡路。",
+    sealed,
+    "睜眼。天空是藍的。你聞到花生醬的味道,眼眶一熱。"];
+  if(S.betrayed)paras.push("只是深夜,你偶爾會夢見黑暗裡那聲沒有回應的呼喊。地球的天空很藍——只有一小塊,永遠是黑的。");
+  paras.push(`通關數據:科研 ${S.sci} · 情報 ${S.intel} · 盟友 ${S.allies} · 祈禱 ${S.prayed} · 好感 ${S.fav}——那條從沒斷線的神諭頻段,是你的導航。`);
+  showEnding("ENDING 2"+(S.sealed?" · 豪華版":"")+(S.betrayed?" · 有債":""),"成功回家 🌍",paras);
+}
+function ending3(){
+  showEnding("ENDING 3","被邪惡宇宙消失 ⚰️",[
+    "眾目睽睽之下,你把兩張公告拍在陣心。符文真的熄滅了——查封生效,系統當機整整一季。",
+    "然後,維安在三十秒內合圍。沒有傳送、沒有黑暗、沒有退路。你早就知道,還是拍了。",
+    "官方紀錄:召喚體1362號,自願遷居外站。再也沒有人見過你。",
+    "但那一季,沒有任何人被拖進這座大廳。聚會上,有人小聲提起你的名字,然後大家舉起杯,換了話題。",
+    "<span class='sys'>(當眾執法=殉道。想活著查封:拍完即傳送(需座標+標籤),或先讓盟友(≥2)關燈。)</span>"]);
+}
+function endNoReturn(){
+  if(S.sci>=4){
+    const p=["標籤洗淨那天,你沒有哭。你打開筆記本——十二個月的推導、側錄的殘響、每一筆數據。",
+      "第七年,你發表空間摺疊理論。第十一年,第一台不依賴標籤引力的空間移動裝置啟動。",
+      "你替所有回不了家的召喚體,鑿出了第二條路。包括你自己。"];
+    if(S.promise)p.push("第一批走進裝置的,是當年替你關燈的那幾個人。啟動前,他們朝你敬了個不太標準的禮。");
+    p.push("回到地球那天,藍天底下,神諭頻段剛好接通:「你遲到了好幾年欸。」你笑著說:「路是我自己修的,慢一點合理吧。」");
+    showEnding("ENDING 4"+(S.promise?" · 守約版":""),"錯過末班車的大科學家 🔬",p);
+  }else if(S.fav>=6){
+    showEnding("ENDING 1 · 戀愛變體","適應良好 💘",[
+      "第十三個月,你發現自己做夢時說的已經是這裡的語言。愣神間,樓下傳來:「湯好了。」",
+      "你放下報告下樓。燭光、真食物、那張看不膩的臉。",
+      "偶爾,神諭頻段傳來訊息。你回得越來越慢,但每一句都認真。",
+      "樣本1362號:適應良好,已建立本地深度連結。政績報告的模範案例。",
+      "<span class='sys'>(沒有人做錯什麼。這才是最完善的邪惡——它甚至給了你真的幸福。)</span>"]);
+  }else{
+    const p1=["第十三個月,你發現自己整整一週沒想起地球。你盯著橘色的天空看了很久,想不起來自己為什麼要在意。",
+      "花生點心帝國開到第五家分店。橘色的天空很好看,深綠的夜空也很好看。",
+      "偶爾,神諭頻段傳來訊息。你回得越來越慢。"];
+    if(S.promise)p1.push("安全屋的聯絡頻道,你已經很久沒打開了。有些承諾,跟標籤一起被洗掉了。");
+    p1.push("樣本1362號:適應良好。值得寫進政績報告。","<span class='sys'>(這個結局裡沒有壞人。這才是最完善的邪惡。)</span>");
+    showEnding("ENDING 1","適應良好 🥜",p1);
+  }
+}
+
+/* ═══════════ 開場 ═══════════ */
+write("<b>邪惡宇宙生存倒數</b>");
+write("你即將在醫療艙醒來。識別環上寫著:<b>召喚體 1362 號</b>。這是邪惡宇宙——制度完善、待遇優渥、沒有人說謊。而召喚,是單向的。");
+write("<span class='sys'>你知道自己是被「召喚儀式」帶來的。但儀式多久一次、在哪舉行、訊號長什麼樣——沒人會主動告訴你,要自己查、自己問。</span>");
+gm("開局不給選昏倒,但給你一個醒來的姿勢。另外——帥哥出沒注意。");
+refresh();
+prologue1();
+</script>
+</body>
+</html>
